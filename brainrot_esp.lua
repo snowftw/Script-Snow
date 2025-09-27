@@ -1,4 +1,4 @@
--- Snow Hub ESP com menu centralizado animado
+-- Snow Hub Menu + Player ESP + Base ESP com visual estiloso
 
 local lp = game.Players.LocalPlayer
 local playerESPs = {}
@@ -6,7 +6,7 @@ local baseESPs = {}
 local enabledPlayerESP = false
 local enabledBaseESP = false
 
--- Função: pinta personagem de vermelho
+-- Função para pintar personagem de vermelho
 local function paintChar(char)
     for _, obj in ipairs(char:GetChildren()) do
         if obj:IsA("BasePart") and obj.Name ~= "HumanoidRootPart" then
@@ -31,7 +31,7 @@ local function createPlayerESP()
             label.BackgroundTransparency = 1
             label.TextColor3 = Color3.fromRGB(255, 0, 0)
             label.TextStrokeTransparency = 0
-            label.Font = Enum.Font.SourceSansBold
+            label.Font = Enum.Font.GothamBold
             label.TextScaled = true
             label.Text = player.Name
             table.insert(playerESPs, billboard)
@@ -46,12 +46,12 @@ local function removePlayerESP()
     playerESPs = {}
 end
 
--- ESP das bases
+-- ESP das bases (com nome + tempo, se conseguir acessar)
 local function createBaseESP()
     for _, obj in ipairs(workspace:GetChildren()) do
         if obj.Name:lower():find("base") then
             local billboard = Instance.new("BillboardGui", obj)
-            billboard.Size = UDim2.new(0, 150, 0, 40)
+            billboard.Size = UDim2.new(0, 150, 0, 50)
             billboard.Adornee = obj
             billboard.AlwaysOnTop = true
             billboard.Name = "BaseESP"
@@ -60,8 +60,11 @@ local function createBaseESP()
             label.BackgroundTransparency = 1
             label.TextColor3 = Color3.fromRGB(0, 255, 255)
             label.TextStrokeTransparency = 0
-            label.Font = Enum.Font.SourceSansBold
+            label.Font = Enum.Font.GothamBold
             label.TextScaled = true
+            -- Se tiver valor de tempo, coloque aqui! Exemplo:
+            -- local time = obj:FindFirstChild("Timer") and obj.Timer.Value or "?"
+            -- label.Text = obj.Name .. "\nTempo: " .. time .. "s"
             label.Text = obj.Name
             table.insert(baseESPs, billboard)
         end
@@ -75,25 +78,25 @@ local function removeBaseESP()
     baseESPs = {}
 end
 
--- GUI do menu centralizado
+-- GUI do menu estiloso
 local menuGui = Instance.new("ScreenGui")
 menuGui.Name = "SnowHubMenu"
 menuGui.Parent = game.CoreGui
 
 local frame = Instance.new("Frame", menuGui)
-frame.Size = UDim2.new(0, 260, 0, 190)
-frame.Position = UDim2.new(0.5, -130, 0, -200) -- Começa fora da tela
-frame.BackgroundColor3 = Color3.fromRGB(20, 20, 20)
+frame.Size = UDim2.new(0, 260, 0, 170)
+frame.Position = UDim2.new(0.5, -130, 0.3, 0)
+frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 frame.BorderSizePixel = 0
-frame.BackgroundTransparency = 0.2
+frame.BackgroundTransparency = 0.25
 
 local title = Instance.new("TextLabel", frame)
-title.Size = UDim2.new(1, 0, 0, 50)
+title.Size = UDim2.new(1, 0, 0, 48)
 title.Position = UDim2.new(0, 0, 0, 0)
 title.BackgroundTransparency = 1
-title.TextColor3 = Color3.fromRGB(100, 230, 255)
+title.TextColor3 = Color3.fromRGB(80, 225, 255)
 title.TextStrokeTransparency = 0
-title.Font = Enum.Font.GothamBold
+title.Font = Enum.Font.GothamBlack
 title.TextScaled = true
 title.Text = "Snow Hub"
 
@@ -102,7 +105,7 @@ opt1.Size = UDim2.new(1, -40, 0, 32)
 opt1.Position = UDim2.new(0, 20, 0, 60)
 opt1.BackgroundColor3 = Color3.fromRGB(40,40,40)
 opt1.TextColor3 = Color3.fromRGB(255,255,255)
-opt1.Font = Enum.Font.Gotham
+opt1.Font = Enum.Font.GothamBold
 opt1.TextScaled = true
 opt1.Text = "Player ESP: OFF"
 
@@ -111,7 +114,7 @@ opt2.Size = UDim2.new(1, -40, 0, 32)
 opt2.Position = UDim2.new(0, 20, 0, 100)
 opt2.BackgroundColor3 = Color3.fromRGB(40,40,40)
 opt2.TextColor3 = Color3.fromRGB(255,255,255)
-opt2.Font = Enum.Font.Gotham
+opt2.Font = Enum.Font.GothamBold
 opt2.TextScaled = true
 opt2.Text = "Base ESP: OFF"
 
@@ -120,29 +123,11 @@ opt3.Size = UDim2.new(1, -40, 0, 32)
 opt3.Position = UDim2.new(0, 20, 0, 140)
 opt3.BackgroundColor3 = Color3.fromRGB(40,40,40)
 opt3.TextColor3 = Color3.fromRGB(255,255,255)
-opt3.Font = Enum.Font.Gotham
+opt3.Font = Enum.Font.GothamBold
 opt3.TextScaled = true
 opt3.Text = "Fechar Menu"
 
 frame.Visible = false
-
--- Animação do menu descendo
-local function showMenu()
-    frame.Visible = true
-    for i = 0, 20 do
-        frame.Position = UDim2.new(0.5, -130, 0, -200 + i*12)
-        wait(0.01)
-    end
-    frame.Position = UDim2.new(0.5, -130, 0.5, -95)
-end
-
-local function hideMenu()
-    for i = 20, 0, -1 do
-        frame.Position = UDim2.new(0.5, -130, 0, -200 + i*12)
-        wait(0.01)
-    end
-    frame.Visible = false
-end
 
 -- Botões do menu
 opt1.MouseButton1Click:Connect(function()
@@ -166,7 +151,7 @@ opt2.MouseButton1Click:Connect(function()
 end)
 
 opt3.MouseButton1Click:Connect(function()
-    hideMenu()
+    frame.Visible = false
 end)
 
 -- Abrir menu com a tecla M
@@ -174,7 +159,7 @@ local UIS = game:GetService("UserInputService")
 UIS.InputBegan:Connect(function(input, processed)
     if processed then return end
     if input.KeyCode == Enum.KeyCode.M then
-        showMenu()
+        frame.Visible = true
     end
 end)
 
@@ -185,4 +170,6 @@ game.StarterGui:SetCore("SendNotification", {
     Duration = 6
 })
 
--- DICA: Para ESP do tempo da base funcionar, preciso saber onde está o valor do tempo nas bases do seu jogo!
+-- DICA IMPORTANTE:
+-- Para ESP do tempo da base funcionar igual o da imagem 6, preciso saber qual o nome do valor do tempo nas bases!
+-- Me mande print do Explorer do Roblox Studio ou diga como acessar esse valor.
