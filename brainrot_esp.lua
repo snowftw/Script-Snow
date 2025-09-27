@@ -1,19 +1,16 @@
--- Snow Hub ESP: Menu estiloso + Player ESP vermelho + Base ESP com timer (precisa ajuste)
-
+-- Snow Hub: ESP, Velocidade e Pulo customizáveis!
 local lp = game.Players.LocalPlayer
-local playerESPs = {}
-local baseESPs = {}
-local enabledPlayerESP = false
-local enabledBaseESP = false
+local playerESPs, baseESPs = {}, {}
+local enabledPlayerESP, enabledBaseESP = false, false
+local walkSpeed, jumpPower = 16, 50 -- valores padrão Roblox
 
--- Função para pintar personagem (inclusive MeshParts e acessórios) de vermelho
+-- Função para pintar personagem de vermelho
 local function paintChar(char)
     for _, obj in ipairs(char:GetDescendants()) do
         if (obj:IsA("BasePart") or obj:IsA("MeshPart")) and obj.Name ~= "HumanoidRootPart" then
             obj.Color = Color3.fromRGB(255, 0, 0)
             obj.Material = Enum.Material.Neon
         end
-        -- Pintar acessórios também
         if obj:IsA("Accessory") and obj:FindFirstChild("Handle") then
             obj.Handle.Color = Color3.fromRGB(255,0,0)
             obj.Handle.Material = Enum.Material.Neon
@@ -45,13 +42,11 @@ local function createPlayerESP()
 end
 
 local function removePlayerESP()
-    for _, esp in ipairs(playerESPs) do
-        esp:Destroy()
-    end
+    for _, esp in ipairs(playerESPs) do esp:Destroy() end
     playerESPs = {}
 end
 
--- ESP das bases (com nome + tempo real se informar valor)
+-- ESP das bases (nome + timer, se informar o valor)
 local function createBaseESP()
     for _, obj in ipairs(workspace:GetChildren()) do
         if obj.Name:lower():find("base") then
@@ -67,7 +62,7 @@ local function createBaseESP()
             label.TextStrokeTransparency = 0
             label.Font = Enum.Font.GothamBold
             label.TextScaled = true
-            -- TROQUE "Timer" PELO NOME DO VALOR DO TEMPO DA BASE!
+            -- Troque "Timer" por nome do valor real se houver!
             local time = obj:FindFirstChild("Timer") and obj.Timer.Value or obj:FindFirstChild("TimeLeft") and obj.TimeLeft.Value or "?"
             label.Text = obj.Name .. "\nTempo: " .. time .. "s"
             table.insert(baseESPs, billboard)
@@ -76,40 +71,28 @@ local function createBaseESP()
 end
 
 local function removeBaseESP()
-    for _, esp in ipairs(baseESPs) do
-        esp:Destroy()
-    end
+    for _, esp in ipairs(baseESPs) do esp:Destroy() end
     baseESPs = {}
 end
 
--- GUI do menu estiloso
+-- Menu estiloso centralizado
 local menuGui = Instance.new("ScreenGui")
 menuGui.Name = "SnowHubMenu"
 menuGui.Parent = game.CoreGui
 
 local frame = Instance.new("Frame", menuGui)
-frame.Size = UDim2.new(0, 260, 0, 170)
-frame.Position = UDim2.new(0.5, -130, 0.3, 0)
+frame.Size = UDim2.new(0, 320, 0, 260)
+frame.Position = UDim2.new(0.5, -160, 0.35, 0)
 frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 frame.BorderSizePixel = 0
-frame.BackgroundTransparency = 0.18
+frame.BackgroundTransparency = 0.12
 frame.AnchorPoint = Vector2.new(0.5, 0)
-frame.ClipsDescendants = true
 frame.Visible = false
-frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-frame.BorderSizePixel = 0
-frame.BackgroundTransparency = 0.15
-frame.AnchorPoint = Vector2.new(0.5, 0)
-frame.Position = UDim2.new(0.5, 0, 0.3, 0)
-frame.Size = UDim2.new(0, 260, 0, 170)
-frame.ZIndex = 10
-frame.Active = true
-
 local UICorner = Instance.new("UICorner", frame)
 UICorner.CornerRadius = UDim.new(0, 18)
 
 local title = Instance.new("TextLabel", frame)
-title.Size = UDim2.new(1, 0, 0, 48)
+title.Size = UDim2.new(1, 0, 0, 52)
 title.Position = UDim2.new(0, 0, 0, 0)
 title.BackgroundTransparency = 1
 title.TextColor3 = Color3.fromRGB(80, 225, 255)
@@ -127,7 +110,6 @@ opt1.TextColor3 = Color3.fromRGB(255,255,255)
 opt1.Font = Enum.Font.GothamBold
 opt1.TextScaled = true
 opt1.Text = "Player ESP: OFF"
-opt1.ZIndex = 11
 local UICorner1 = Instance.new("UICorner", opt1)
 UICorner1.CornerRadius = UDim.new(0, 12)
 
@@ -139,19 +121,73 @@ opt2.TextColor3 = Color3.fromRGB(255,255,255)
 opt2.Font = Enum.Font.GothamBold
 opt2.TextScaled = true
 opt2.Text = "Base ESP: OFF"
-opt2.ZIndex = 11
 local UICorner2 = Instance.new("UICorner", opt2)
 UICorner2.CornerRadius = UDim.new(0, 12)
 
+-- Slider para velocidade
+local speedLabel = Instance.new("TextLabel", frame)
+speedLabel.Size = UDim2.new(0.5, -20, 0, 28)
+speedLabel.Position = UDim2.new(0, 20, 0, 140)
+speedLabel.BackgroundTransparency = 1
+speedLabel.TextColor3 = Color3.fromRGB(120,255,120)
+speedLabel.Font = Enum.Font.GothamBold
+speedLabel.TextScaled = true
+speedLabel.Text = "Velocidade: " .. walkSpeed
+
+local speedInc = Instance.new("TextButton", frame)
+speedInc.Size = UDim2.new(0, 28, 0, 28)
+speedInc.Position = UDim2.new(0, 170, 0, 140)
+speedInc.Text = "+"
+speedInc.Font = Enum.Font.GothamBold
+speedInc.TextScaled = true
+speedInc.BackgroundColor3 = Color3.fromRGB(60,60,60)
+speedInc.TextColor3 = Color3.fromRGB(255,255,255)
+
+local speedDec = Instance.new("TextButton", frame)
+speedDec.Size = UDim2.new(0, 28, 0, 28)
+speedDec.Position = UDim2.new(0, 210, 0, 140)
+speedDec.Text = "-"
+speedDec.Font = Enum.Font.GothamBold
+speedDec.TextScaled = true
+speedDec.BackgroundColor3 = Color3.fromRGB(60,60,60)
+speedDec.TextColor3 = Color3.fromRGB(255,255,255)
+
+-- Slider para pulo
+local jumpLabel = Instance.new("TextLabel", frame)
+jumpLabel.Size = UDim2.new(0.5, -20, 0, 28)
+jumpLabel.Position = UDim2.new(0, 20, 0, 175)
+jumpLabel.BackgroundTransparency = 1
+jumpLabel.TextColor3 = Color3.fromRGB(120,180,255)
+jumpLabel.Font = Enum.Font.GothamBold
+jumpLabel.TextScaled = true
+jumpLabel.Text = "Pulo: " .. jumpPower
+
+local jumpInc = Instance.new("TextButton", frame)
+jumpInc.Size = UDim2.new(0, 28, 0, 28)
+jumpInc.Position = UDim2.new(0, 170, 0, 175)
+jumpInc.Text = "+"
+jumpInc.Font = Enum.Font.GothamBold
+jumpInc.TextScaled = true
+jumpInc.BackgroundColor3 = Color3.fromRGB(60,60,60)
+jumpInc.TextColor3 = Color3.fromRGB(255,255,255)
+
+local jumpDec = Instance.new("TextButton", frame)
+jumpDec.Size = UDim2.new(0, 28, 0, 28)
+jumpDec.Position = UDim2.new(0, 210, 0, 175)
+jumpDec.Text = "-"
+jumpDec.Font = Enum.Font.GothamBold
+jumpDec.TextScaled = true
+jumpDec.BackgroundColor3 = Color3.fromRGB(60,60,60)
+jumpDec.TextColor3 = Color3.fromRGB(255,255,255)
+
 local opt3 = Instance.new("TextButton", frame)
 opt3.Size = UDim2.new(1, -40, 0, 32)
-opt3.Position = UDim2.new(0, 20, 0, 140)
+opt3.Position = UDim2.new(0, 20, 0, 215)
 opt3.BackgroundColor3 = Color3.fromRGB(40,40,40)
 opt3.TextColor3 = Color3.fromRGB(255,255,255)
 opt3.Font = Enum.Font.GothamBold
 opt3.TextScaled = true
 opt3.Text = "Fechar Menu"
-opt3.ZIndex = 11
 local UICorner3 = Instance.new("UICorner", opt3)
 UICorner3.CornerRadius = UDim.new(0, 12)
 
@@ -159,25 +195,55 @@ UICorner3.CornerRadius = UDim.new(0, 12)
 opt1.MouseButton1Click:Connect(function()
     enabledPlayerESP = not enabledPlayerESP
     opt1.Text = enabledPlayerESP and "Player ESP: ON" or "Player ESP: OFF"
-    if enabledPlayerESP then
-        createPlayerESP()
-    else
-        removePlayerESP()
-    end
+    if enabledPlayerESP then createPlayerESP() else removePlayerESP() end
 end)
 
 opt2.MouseButton1Click:Connect(function()
     enabledBaseESP = not enabledBaseESP
     opt2.Text = enabledBaseESP and "Base ESP: ON" or "Base ESP: OFF"
-    if enabledBaseESP then
-        createBaseESP()
-    else
-        removeBaseESP()
+    if enabledBaseESP then createBaseESP() else removeBaseESP() end
+end)
+
+opt3.MouseButton1Click:Connect(function() frame.Visible = false end)
+
+speedInc.MouseButton1Click:Connect(function()
+    walkSpeed = math.clamp(walkSpeed + 5, 1, 100)
+    speedLabel.Text = "Velocidade: " .. walkSpeed
+    if lp.Character and lp.Character:FindFirstChildWhichIsA("Humanoid") then
+        lp.Character:FindFirstChildWhichIsA("Humanoid").WalkSpeed = walkSpeed
+    end
+end)
+speedDec.MouseButton1Click:Connect(function()
+    walkSpeed = math.clamp(walkSpeed - 5, 1, 100)
+    speedLabel.Text = "Velocidade: " .. walkSpeed
+    if lp.Character and lp.Character:FindFirstChildWhichIsA("Humanoid") then
+        lp.Character:FindFirstChildWhichIsA("Humanoid").WalkSpeed = walkSpeed
     end
 end)
 
-opt3.MouseButton1Click:Connect(function()
-    frame.Visible = false
+jumpInc.MouseButton1Click:Connect(function()
+    jumpPower = math.clamp(jumpPower + 5, 1, 100)
+    jumpLabel.Text = "Pulo: " .. jumpPower
+    if lp.Character and lp.Character:FindFirstChildWhichIsA("Humanoid") then
+        lp.Character:FindFirstChildWhichIsA("Humanoid").JumpPower = jumpPower
+    end
+end)
+jumpDec.MouseButton1Click:Connect(function()
+    jumpPower = math.clamp(jumpPower - 5, 1, 100)
+    jumpLabel.Text = "Pulo: " .. jumpPower
+    if lp.Character and lp.Character:FindFirstChildWhichIsA("Humanoid") then
+        lp.Character:FindFirstChildWhichIsA("Humanoid").JumpPower = jumpPower
+    end
+end)
+
+-- Atualiza velocidade e pulo quando respawnar
+lp.CharacterAdded:Connect(function(char)
+    wait(0.2)
+    local hum = char:FindFirstChildWhichIsA("Humanoid")
+    if hum then
+        hum.WalkSpeed = walkSpeed
+        hum.JumpPower = jumpPower
+    end
 end)
 
 -- Abrir menu com M
