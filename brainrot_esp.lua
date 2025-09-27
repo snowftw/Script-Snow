@@ -1,4 +1,4 @@
--- Snow Hub Menu + Player ESP + Base ESP com visual estiloso
+-- Snow Hub ESP: Menu estiloso + Player ESP vermelho + Base ESP com timer (precisa ajuste)
 
 local lp = game.Players.LocalPlayer
 local playerESPs = {}
@@ -6,12 +6,17 @@ local baseESPs = {}
 local enabledPlayerESP = false
 local enabledBaseESP = false
 
--- Função para pintar personagem de vermelho
+-- Função para pintar personagem (inclusive MeshParts e acessórios) de vermelho
 local function paintChar(char)
-    for _, obj in ipairs(char:GetChildren()) do
-        if obj:IsA("BasePart") and obj.Name ~= "HumanoidRootPart" then
+    for _, obj in ipairs(char:GetDescendants()) do
+        if (obj:IsA("BasePart") or obj:IsA("MeshPart")) and obj.Name ~= "HumanoidRootPart" then
             obj.Color = Color3.fromRGB(255, 0, 0)
             obj.Material = Enum.Material.Neon
+        end
+        -- Pintar acessórios também
+        if obj:IsA("Accessory") and obj:FindFirstChild("Handle") then
+            obj.Handle.Color = Color3.fromRGB(255,0,0)
+            obj.Handle.Material = Enum.Material.Neon
         end
     end
 end
@@ -31,7 +36,7 @@ local function createPlayerESP()
             label.BackgroundTransparency = 1
             label.TextColor3 = Color3.fromRGB(255, 0, 0)
             label.TextStrokeTransparency = 0
-            label.Font = Enum.Font.GothamBold
+            label.Font = Enum.Font.GothamBlack
             label.TextScaled = true
             label.Text = player.Name
             table.insert(playerESPs, billboard)
@@ -46,12 +51,12 @@ local function removePlayerESP()
     playerESPs = {}
 end
 
--- ESP das bases (com nome + tempo, se conseguir acessar)
+-- ESP das bases (com nome + tempo real se informar valor)
 local function createBaseESP()
     for _, obj in ipairs(workspace:GetChildren()) do
         if obj.Name:lower():find("base") then
             local billboard = Instance.new("BillboardGui", obj)
-            billboard.Size = UDim2.new(0, 150, 0, 50)
+            billboard.Size = UDim2.new(0, 180, 0, 50)
             billboard.Adornee = obj
             billboard.AlwaysOnTop = true
             billboard.Name = "BaseESP"
@@ -62,10 +67,9 @@ local function createBaseESP()
             label.TextStrokeTransparency = 0
             label.Font = Enum.Font.GothamBold
             label.TextScaled = true
-            -- Se tiver valor de tempo, coloque aqui! Exemplo:
-            -- local time = obj:FindFirstChild("Timer") and obj.Timer.Value or "?"
-            -- label.Text = obj.Name .. "\nTempo: " .. time .. "s"
-            label.Text = obj.Name
+            -- TROQUE "Timer" PELO NOME DO VALOR DO TEMPO DA BASE!
+            local time = obj:FindFirstChild("Timer") and obj.Timer.Value or obj:FindFirstChild("TimeLeft") and obj.TimeLeft.Value or "?"
+            label.Text = obj.Name .. "\nTempo: " .. time .. "s"
             table.insert(baseESPs, billboard)
         end
     end
@@ -88,7 +92,21 @@ frame.Size = UDim2.new(0, 260, 0, 170)
 frame.Position = UDim2.new(0.5, -130, 0.3, 0)
 frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 frame.BorderSizePixel = 0
-frame.BackgroundTransparency = 0.25
+frame.BackgroundTransparency = 0.18
+frame.AnchorPoint = Vector2.new(0.5, 0)
+frame.ClipsDescendants = true
+frame.Visible = false
+frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+frame.BorderSizePixel = 0
+frame.BackgroundTransparency = 0.15
+frame.AnchorPoint = Vector2.new(0.5, 0)
+frame.Position = UDim2.new(0.5, 0, 0.3, 0)
+frame.Size = UDim2.new(0, 260, 0, 170)
+frame.ZIndex = 10
+frame.Active = true
+
+local UICorner = Instance.new("UICorner", frame)
+UICorner.CornerRadius = UDim.new(0, 18)
 
 local title = Instance.new("TextLabel", frame)
 title.Size = UDim2.new(1, 0, 0, 48)
@@ -99,6 +117,7 @@ title.TextStrokeTransparency = 0
 title.Font = Enum.Font.GothamBlack
 title.TextScaled = true
 title.Text = "Snow Hub"
+title.ZIndex = 11
 
 local opt1 = Instance.new("TextButton", frame)
 opt1.Size = UDim2.new(1, -40, 0, 32)
@@ -108,6 +127,9 @@ opt1.TextColor3 = Color3.fromRGB(255,255,255)
 opt1.Font = Enum.Font.GothamBold
 opt1.TextScaled = true
 opt1.Text = "Player ESP: OFF"
+opt1.ZIndex = 11
+local UICorner1 = Instance.new("UICorner", opt1)
+UICorner1.CornerRadius = UDim.new(0, 12)
 
 local opt2 = Instance.new("TextButton", frame)
 opt2.Size = UDim2.new(1, -40, 0, 32)
@@ -117,6 +139,9 @@ opt2.TextColor3 = Color3.fromRGB(255,255,255)
 opt2.Font = Enum.Font.GothamBold
 opt2.TextScaled = true
 opt2.Text = "Base ESP: OFF"
+opt2.ZIndex = 11
+local UICorner2 = Instance.new("UICorner", opt2)
+UICorner2.CornerRadius = UDim.new(0, 12)
 
 local opt3 = Instance.new("TextButton", frame)
 opt3.Size = UDim2.new(1, -40, 0, 32)
@@ -126,8 +151,9 @@ opt3.TextColor3 = Color3.fromRGB(255,255,255)
 opt3.Font = Enum.Font.GothamBold
 opt3.TextScaled = true
 opt3.Text = "Fechar Menu"
-
-frame.Visible = false
+opt3.ZIndex = 11
+local UICorner3 = Instance.new("UICorner", opt3)
+UICorner3.CornerRadius = UDim.new(0, 12)
 
 -- Botões do menu
 opt1.MouseButton1Click:Connect(function()
@@ -154,12 +180,12 @@ opt3.MouseButton1Click:Connect(function()
     frame.Visible = false
 end)
 
--- Abrir menu com a tecla M
+-- Abrir menu com M
 local UIS = game:GetService("UserInputService")
 UIS.InputBegan:Connect(function(input, processed)
     if processed then return end
     if input.KeyCode == Enum.KeyCode.M then
-        frame.Visible = true
+        frame.Visible = not frame.Visible
     end
 end)
 
@@ -170,6 +196,5 @@ game.StarterGui:SetCore("SendNotification", {
     Duration = 6
 })
 
--- DICA IMPORTANTE:
--- Para ESP do tempo da base funcionar igual o da imagem 6, preciso saber qual o nome do valor do tempo nas bases!
--- Me mande print do Explorer do Roblox Studio ou diga como acessar esse valor.
+-- DICA: Para ESP do tempo da base funcionar, me diga o nome do valor dentro da base!
+-- Exemplo: Se o valor chama TimeLeft, troque "Timer" por "TimeLeft" no script acima
