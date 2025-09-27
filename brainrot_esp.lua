@@ -1,13 +1,30 @@
--- Snow Hub: ESP, Velocidade e Pulo customizáveis!
+-- Snow Hub: Menu estiloso + Speed/Pulo funcional + ESP dos players vermelhos + ESP tempo da sua base
+
 local lp = game.Players.LocalPlayer
-local playerESPs, baseESPs = {}, {}
+local playerESPs, baseESP = {}, nil
 local enabledPlayerESP, enabledBaseESP = false, false
-local walkSpeed, jumpPower = 16, 50 -- valores padrão Roblox
+local walkSpeed, jumpPower = 16, 50
+
+-- Atualiza velocidade e pulo SEMPRE
+local function updateStats()
+    if lp.Character then
+        local hum = lp.Character:FindFirstChildWhichIsA("Humanoid")
+        if hum then
+            hum.WalkSpeed = walkSpeed
+            hum.JumpPower = jumpPower
+        end
+    end
+end
+
+lp.CharacterAdded:Connect(function()
+    wait(0.2)
+    updateStats()
+end)
 
 -- Função para pintar personagem de vermelho
 local function paintChar(char)
     for _, obj in ipairs(char:GetDescendants()) do
-        if (obj:IsA("BasePart") or obj:IsA("MeshPart")) and obj.Name ~= "HumanoidRootPart" then
+        if obj:IsA("BasePart") and obj.Name ~= "HumanoidRootPart" then
             obj.Color = Color3.fromRGB(255, 0, 0)
             obj.Material = Enum.Material.Neon
         end
@@ -18,25 +35,50 @@ local function paintChar(char)
     end
 end
 
--- ESP dos players
+-- ESP dos players (atualiza sempre que alguém respawnar)
 local function createPlayerESP()
+    removePlayerESP()
     for _, player in ipairs(game.Players:GetPlayers()) do
-        if player ~= lp and player.Character and player.Character:FindFirstChild("Head") then
-            paintChar(player.Character)
-            local billboard = Instance.new("BillboardGui", player.Character.Head)
-            billboard.Size = UDim2.new(0, 100, 0, 40)
-            billboard.Adornee = player.Character.Head
-            billboard.AlwaysOnTop = true
-            billboard.Name = "PlayerESP"
-            local label = Instance.new("TextLabel", billboard)
-            label.Size = UDim2.new(1, 0, 1, 0)
-            label.BackgroundTransparency = 1
-            label.TextColor3 = Color3.fromRGB(255, 0, 0)
-            label.TextStrokeTransparency = 0
-            label.Font = Enum.Font.GothamBlack
-            label.TextScaled = true
-            label.Text = player.Name
-            table.insert(playerESPs, billboard)
+        if player ~= lp then
+            if player.Character and player.Character:FindFirstChild("Head") then
+                paintChar(player.Character)
+                local billboard = Instance.new("BillboardGui", player.Character.Head)
+                billboard.Size = UDim2.new(0, 100, 0, 40)
+                billboard.Adornee = player.Character.Head
+                billboard.AlwaysOnTop = true
+                billboard.Name = "PlayerESP"
+                local label = Instance.new("TextLabel", billboard)
+                label.Size = UDim2.new(1, 0, 1, 0)
+                label.BackgroundTransparency = 1
+                label.TextColor3 = Color3.fromRGB(255, 0, 0)
+                label.TextStrokeTransparency = 0
+                label.Font = Enum.Font.GothamBlack
+                label.TextScaled = true
+                label.Text = player.Name
+                table.insert(playerESPs, billboard)
+            end
+            player.CharacterAdded:Connect(function(char)
+                wait(0.2)
+                if enabledPlayerESP then
+                    paintChar(char)
+                    if char:FindFirstChild("Head") then
+                        local billboard = Instance.new("BillboardGui", char.Head)
+                        billboard.Size = UDim2.new(0, 100, 0, 40)
+                        billboard.Adornee = char.Head
+                        billboard.AlwaysOnTop = true
+                        billboard.Name = "PlayerESP"
+                        local label = Instance.new("TextLabel", billboard)
+                        label.Size = UDim2.new(1, 0, 1, 0)
+                        label.BackgroundTransparency = 1
+                        label.TextColor3 = Color3.fromRGB(255, 0, 0)
+                        label.TextStrokeTransparency = 0
+                        label.Font = Enum.Font.GothamBlack
+                        label.TextScaled = true
+                        label.Text = player.Name
+                        table.insert(playerESPs, billboard)
+                    end
+                end
+            end)
         end
     end
 end
@@ -46,33 +88,52 @@ local function removePlayerESP()
     playerESPs = {}
 end
 
--- ESP das bases (nome + timer, se informar o valor)
+-- ESP do tempo da base do player
 local function createBaseESP()
+    removeBaseESP()
+    -- Tenta encontrar sua base pelo nome
+    local baseObj = nil
     for _, obj in ipairs(workspace:GetChildren()) do
-        if obj.Name:lower():find("base") then
-            local billboard = Instance.new("BillboardGui", obj)
-            billboard.Size = UDim2.new(0, 180, 0, 50)
-            billboard.Adornee = obj
-            billboard.AlwaysOnTop = true
-            billboard.Name = "BaseESP"
-            local label = Instance.new("TextLabel", billboard)
-            label.Size = UDim2.new(1, 0, 1, 0)
-            label.BackgroundTransparency = 1
-            label.TextColor3 = Color3.fromRGB(0, 255, 255)
-            label.TextStrokeTransparency = 0
-            label.Font = Enum.Font.GothamBold
-            label.TextScaled = true
-            -- Troque "Timer" por nome do valor real se houver!
-            local time = obj:FindFirstChild("Timer") and obj.Timer.Value or obj:FindFirstChild("TimeLeft") and obj.TimeLeft.Value or "?"
-            label.Text = obj.Name .. "\nTempo: " .. time .. "s"
-            table.insert(baseESPs, billboard)
+        if obj.Name:lower():find(lp.Name:lower()) and obj.Name:lower():find("base") then
+            baseObj = obj
+            break
         end
+    end
+    if baseObj then
+        local billboard = Instance.new("BillboardGui", baseObj)
+        billboard.Size = UDim2.new(0, 180, 0, 55)
+        billboard.Adornee = baseObj
+        billboard.AlwaysOnTop = true
+        billboard.Name = "BaseESP"
+        local label = Instance.new("TextLabel", billboard)
+        label.Size = UDim2.new(1, 0, 1, 0)
+        label.BackgroundTransparency = 1
+        label.TextColor3 = Color3.fromRGB(0, 255, 255)
+        label.TextStrokeTransparency = 0
+        label.Font = Enum.Font.GothamBold
+        label.TextScaled = true
+
+        -- TENTA OBTER O TEMPO DA BASE
+        local time = "?"
+        for _, v in ipairs(baseObj:GetChildren()) do
+            if v:IsA("NumberValue") and (v.Name:lower():find("timer") or v.Name:lower():find("time") or v.Name:lower():find("decay")) then
+                time = math.floor(v.Value)
+                -- Atualiza tempo em tempo real
+                v:GetPropertyChangedSignal("Value"):Connect(function()
+                    label.Text = baseObj.Name .. "\nTempo: " .. math.floor(v.Value) .. "s"
+                end)
+                break
+            end
+        end
+        label.Text = baseObj.Name .. "\nTempo: " .. time .. "s"
+        baseESP = billboard
+    else
+        warn("Sua base não foi encontrada!")
     end
 end
 
 local function removeBaseESP()
-    for _, esp in ipairs(baseESPs) do esp:Destroy() end
-    baseESPs = {}
+    if baseESP then baseESP:Destroy() baseESP = nil end
 end
 
 -- Menu estiloso centralizado
@@ -209,41 +270,23 @@ opt3.MouseButton1Click:Connect(function() frame.Visible = false end)
 speedInc.MouseButton1Click:Connect(function()
     walkSpeed = math.clamp(walkSpeed + 5, 1, 100)
     speedLabel.Text = "Velocidade: " .. walkSpeed
-    if lp.Character and lp.Character:FindFirstChildWhichIsA("Humanoid") then
-        lp.Character:FindFirstChildWhichIsA("Humanoid").WalkSpeed = walkSpeed
-    end
+    updateStats()
 end)
 speedDec.MouseButton1Click:Connect(function()
     walkSpeed = math.clamp(walkSpeed - 5, 1, 100)
     speedLabel.Text = "Velocidade: " .. walkSpeed
-    if lp.Character and lp.Character:FindFirstChildWhichIsA("Humanoid") then
-        lp.Character:FindFirstChildWhichIsA("Humanoid").WalkSpeed = walkSpeed
-    end
+    updateStats()
 end)
 
 jumpInc.MouseButton1Click:Connect(function()
     jumpPower = math.clamp(jumpPower + 5, 1, 100)
     jumpLabel.Text = "Pulo: " .. jumpPower
-    if lp.Character and lp.Character:FindFirstChildWhichIsA("Humanoid") then
-        lp.Character:FindFirstChildWhichIsA("Humanoid").JumpPower = jumpPower
-    end
+    updateStats()
 end)
 jumpDec.MouseButton1Click:Connect(function()
     jumpPower = math.clamp(jumpPower - 5, 1, 100)
     jumpLabel.Text = "Pulo: " .. jumpPower
-    if lp.Character and lp.Character:FindFirstChildWhichIsA("Humanoid") then
-        lp.Character:FindFirstChildWhichIsA("Humanoid").JumpPower = jumpPower
-    end
-end)
-
--- Atualiza velocidade e pulo quando respawnar
-lp.CharacterAdded:Connect(function(char)
-    wait(0.2)
-    local hum = char:FindFirstChildWhichIsA("Humanoid")
-    if hum then
-        hum.WalkSpeed = walkSpeed
-        hum.JumpPower = jumpPower
-    end
+    updateStats()
 end)
 
 -- Abrir menu com M
@@ -262,5 +305,4 @@ game.StarterGui:SetCore("SendNotification", {
     Duration = 6
 })
 
--- DICA: Para ESP do tempo da base funcionar, me diga o nome do valor dentro da base!
--- Exemplo: Se o valor chama TimeLeft, troque "Timer" por "TimeLeft" no script acima
+-- DICA: Para tempo da base aparecer, clique na base no Studio, veja os valores e me mande o nome do valor!
